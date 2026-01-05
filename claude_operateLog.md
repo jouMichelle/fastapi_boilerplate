@@ -1,5 +1,37 @@
 # Claude 操作日志
 
+## 2026-01-05 - 添加日期时间工具模块
+
+### 操作描述
+
+添加通用的日期时间工具模块，提供时间戳、格式化、时区转换等常用功能。
+
+### 变更内容
+
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `app/utils/datetime_util.py` | 新建 | 日期时间工具模块 |
+| `pyproject.toml` | 修改 | 添加 pytz 依赖 |
+
+### 功能列表
+
+| 函数 | 说明 |
+|------|------|
+| `current_timestamp()` | 获取当前时间戳 |
+| `utc_now()` | 获取当前 UTC 时间 |
+| `local_now()` | 获取本地时间 |
+| `format_datetime()` | 格式化日期时间 |
+| `parse_datetime()` | 解析日期时间字符串 |
+| `timezone_convert()` | 时区转换 |
+| `timestamp_to_datetime()` | 时间戳转日期时间 |
+| `datetime_to_timestamp()` | 日期时间转时间戳 |
+| `add_time()` / `subtract_time()` | 时间加减 |
+| `time_diff()` | 计算时间差值 |
+| `is_business_day()` | 判断工作日 |
+| `get_week_start()` / `get_month_start()` | 获取周/月开始时间 |
+
+---
+
 ## 2026-01-05 - 实现认证授权系统（Auth API）
 
 ### 操作描述
