@@ -1,0 +1,143 @@
+# ============================================================
+# logging.yaml
+#
+# 企业通用日志配置文件
+#
+# 设计目标：
+# - 不关心运行环境（dev / prod / test）
+# - 只描述“日志策略”，不包含任何业务语义
+# - 可被 Web / Worker / CLI / Script 复用
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 全局日志级别（默认级别）
+#
+# 含义：
+# - 当某个 sink（console / file / json）未单独指定 level 时，
+#   使用这里的 level
+#
+# 可选值（Loguru 标准）：
+#   TRACE | DEBUG | INFO | SUCCESS | WARNING | ERROR | CRITICAL
+# ------------------------------------------------------------
+level: INFO
+
+
+# ------------------------------------------------------------
+# 日志格式（用于 console / 普通文本文件）
+#
+# 注意事项：
+# 1. 这是“人类可读格式”，不是 JSON
+# 2. {extra[xxx]} 中的字段是“可选的”，不存在时不会报错
+# 3. 推荐至少包含 component，便于区分模块
+#
+# 常用内置字段：
+# - time       : 日志时间
+# - level      : 日志级别
+# - message    : 日志正文
+#
+# 常用 extra 字段（由业务 bind）：
+# - component  : 逻辑组件名（api.user / service.auth 等）
+# - 其它字段  : user_id / order_id / tenant 等
+# ------------------------------------------------------------
+format: "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{extra[component]}</cyan> | [{extra[request_id]}] | {name}:{function}:{line} | <level>{message}</level>"
+
+
+# ------------------------------------------------------------
+# 控制台日志（Console Sink）
+#
+# 用途：
+# - 本地开发
+# - 容器 stdout
+# - Kubernetes / Docker 日志采集
+# ------------------------------------------------------------
+console:
+  # 是否启用控制台日志
+  enabled: true
+
+  # 控制台日志级别
+  # - null 表示继承全局 level
+  # - 可单独设置为 DEBUG 等
+  level: null
+
+  # 是否启用彩色输出（ANSI color）
+  # 建议：
+  # - 本地开发：true
+  # - 纯文本采集环境：false
+  colorize: true
+
+  # 是否打印异常的完整调用栈
+  # true 适合调试，生产建议 false
+  backtrace: false
+
+  # 是否打印异常时的变量上下文
+  # true 非常详细，但性能开销大
+  diagnose: false
+
+
+# ------------------------------------------------------------
+# 普通文本文件日志（Text File Sink）
+#
+# 用途：
+# - 本地排查问题
+# - 服务器直接查看日志文件
+# - 不依赖日志聚合系统的场景
+# ------------------------------------------------------------
+file:
+  # 是否启用文件日志
+  enabled: true
+
+  # 文件日志级别
+  # null 表示继承全局 level
+  level: null
+
+  # 日志文件名（相对于 log_dir）
+  filename: app.log
+
+  # 日志轮转策略
+  # 常见写法：
+  # - "10 MB"
+  # - "1 day"
+  rotation: 10 MB
+
+  # 日志保留策略
+  # - 超过该时间的日志会被自动删除
+  retention: 7 days
+
+  # 是否压缩旧日志
+  # 可选值：zip / gz / bz2 / xz
+  # compression: null
+  compression: zip
+
+# ------------------------------------------------------------
+# JSON 日志（Structured Log Sink）
+#
+# 用途：
+# - 日志聚合系统（ELK / Loki / Vector / Fluent Bit）
+# - 机器可读、结构化分析
+#
+# 特点：
+# - 不使用 format
+# - serialize=true
+# - 每条日志是一条 JSON
+# ------------------------------------------------------------
+json:
+  # 是否启用 JSON 日志
+  enabled: true
+
+  # JSON 日志级别
+  # null 表示继承全局 level
+  level: null
+
+  # JSON 日志文件名
+  filename: app.json
+
+  # JSON 日志轮转策略（通常比 text 大）
+  rotation: 100 MB
+
+  # JSON 日志保留时间
+  retention: 14 days
+
+  # 是否压缩 JSON 日志
+  # compression: null
+  compression: zip

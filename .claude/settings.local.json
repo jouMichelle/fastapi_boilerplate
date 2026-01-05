@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(git -C /Users/zhoubinbin/code/Python/github/my_github/fastapi_boilerplate log --oneline)",
+      "Bash(git -C /Users/zhoubinbin/code/Python/github/my_github/fastapi_boilerplate log --format=\"%h %s\")",
+      "Bash(git -C /Users/zhoubinbin/code/Python/github/my_github/fastapi_boilerplate show 23afdaf --stat)"
+    ]
+  }
+}
