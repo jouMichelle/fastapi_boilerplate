@@ -1,5 +1,55 @@
 # Claude 操作日志
 
+## 2026-01-05 - 实现认证授权系统（Auth API）
+
+### 操作描述
+
+补全脚手架缺失的认证授权系统，实现用户登录、注册、Token 刷新功能。
+
+### 变更内容
+
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `app/schemas/auth.py` | 新建 | 认证相关 Schema（LoginRequest, TokenResponse, RefreshTokenRequest） |
+| `app/services/auth/service.py` | 新建 | 认证服务层（AuthService） |
+| `app/api/v1/auth/__init__.py` | 新建 | Auth API 模块初始化 |
+| `app/api/v1/auth/router.py` | 新建 | Auth API 路由（login, register, refresh） |
+| `app/bootstrap/router.py` | 修改 | 注册 auth router |
+
+### API 接口
+
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| POST | `/api/v1/auth/login` | 用户登录（支持用户名/邮箱） | 无 |
+| POST | `/api/v1/auth/register` | 用户注册 | 无 |
+| POST | `/api/v1/auth/refresh` | 刷新 Token | 无（需 refresh_token） |
+
+### 认证流程
+
+```text
+1. 注册: POST /auth/register → 返回用户信息
+2. 登录: POST /auth/login → 返回 access_token + refresh_token
+3. 访问: GET /users/me (Header: Authorization: Bearer <access_token>)
+4. 刷新: POST /auth/refresh (Body: refresh_token) → 返回新的令牌对
+```
+
+### Token 配置
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| ACCESS_TOKEN_EXPIRE_MINUTES | 30 | 访问令牌过期时间（分钟） |
+| REFRESH_TOKEN_EXPIRE_DAYS | 7 | 刷新令牌过期时间（天） |
+
+### 验证结果
+
+- ✅ 用户注册成功
+- ✅ 用户名/邮箱登录成功
+- ✅ 错误密码返回 401
+- ✅ Access Token 访问受保护资源成功
+- ✅ Refresh Token 刷新令牌成功
+
+---
+
 ## 2026-01-04 - 添加 MySQL 数据库支持
 
 ### 操作描述

@@ -18,8 +18,10 @@ def register_routers(app: FastAPI) -> None:
         return {"status": "healthy", "app": settings.APP_NAME}
 
     # API v1 路由
+    from app.api.v1.auth.router import router as auth_router
     from app.api.v1.user.router import router as user_router
 
+    api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
     api_router.include_router(user_router, prefix="/users", tags=["Users"])
 
     # 注册 API 路由
