@@ -236,28 +236,29 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ## 服务说明
 
-### 生产环境服务（docker-compose.prod.yml）
+### 生产环境服务
+
+**docker-compose.prod.yml**（使用预构建镜像）
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | app | 8000 | FastAPI 应用（Gunicorn + Uvicorn） |
 
-> 数据库和 Redis 需要外部提供
-
-### 开发环境服务（docker-compose.yml）
+**docker-compose.yml**（服务器上构建）
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | app | 8000 | FastAPI 应用（Gunicorn + Uvicorn） |
-| db | 5432 | PostgreSQL 数据库 |
-| redis | 6379 | Redis 缓存 |
-| worker | - | Celery Worker（可选） |
 
-### 开发环境服务
+> 两种生产配置都需要外部提供数据库和 Redis 服务
+
+### 开发环境服务（docker-compose.dev.yml）
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| app | 8000 | FastAPI 应用（热重载模式） |
+| app | 8000 | FastAPI 应用（热重载模式，默认 SQLite） |
+
+> 开发环境默认使用 SQLite，如需连接外部数据库可通过环境变量配置
 
 ## 常用命令
 
