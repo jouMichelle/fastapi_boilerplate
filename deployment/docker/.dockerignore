@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+env
+.eggs
+*.egg-info
+*.egg
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# 测试
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+
+# 文档
+docs/_build
+
+# 本地数据
+data/
+logs/
+*.db
+*.sqlite3
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# 其他
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Docker
+deployment/docker/
+!deployment/docker/entrypoint.sh

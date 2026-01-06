@@ -23,6 +23,7 @@ dependencies = [
     "loguru>=0.7.0",
     "PyYAML>=6.0.0",
     "pytz>=2024.1",
+    "gunicorn>=21.0.0",
 ]
 
 [project.optional-dependencies]
