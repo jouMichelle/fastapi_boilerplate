@@ -7,14 +7,15 @@
 ```
 deployment/
 ├── docker/
-│   ├── Dockerfile        # 生产环境镜像
-│   ├── Dockerfile.dev    # 开发环境镜像
-│   ├── entrypoint.sh     # 启动脚本
-│   └── .dockerignore     # 构建排除文件
-├── docker-compose.yml     # 生产环境编排
-├── docker-compose.dev.yml # 开发环境编排
-├── env.example           # 环境变量模板
-└── README.md             # 本文档
+│   ├── Dockerfile         # 生产环境镜像
+│   ├── Dockerfile.dev     # 开发环境镜像
+│   ├── entrypoint.sh      # 启动脚本
+│   └── .dockerignore      # 构建排除文件
+├── docker-compose.yml      # 生产环境编排（需要构建）
+├── docker-compose.prod.yml # 生产环境编排（使用预构建镜像）
+├── docker-compose.dev.yml  # 开发环境编排
+├── env.example            # 环境变量模板
+└── README.md              # 本文档
 ```
 
 ## 快速开始
@@ -56,67 +57,160 @@ docker-compose -f deployment/docker-compose.yml down
 
 ## 部署方式
 
-### 方式一：使用 Docker Compose（推荐）
+### 方式一：服务器上构建部署
 
-适合单机部署，包含完整的服务栈。
-
-```bash
-# 生产环境
-docker-compose -f deployment/docker-compose.yml up -d
-
-# 启用 Celery Worker（可选）
-docker-compose -f deployment/docker-compose.yml --profile worker up -d
-```
-
-### 方式二：导出镜像部署
-
-适合无法访问 Git 仓库的服务器。
+适合服务器可以访问 Git 仓库的场景。
 
 ```bash
-# 本地构建镜像
-docker build -t fastapi-app:latest -f deployment/docker/Dockerfile .
-
-# 导出镜像文件
-docker save fastapi-app:latest | gzip > fastapi-app.tar.gz
-
-# 传输到服务器
-scp fastapi-app.tar.gz user@server:/path/to/
-
-# 服务器上加载镜像
-docker load < fastapi-app.tar.gz
-
-# 启动容器
-docker run -d \
-  --name fastapi-app \
-  -p 8000:8000 \
-  -e DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/dbname \
-  -e SECRET_KEY=your-secret-key \
-  fastapi-app:latest
-```
-
-### 方式三：服务器上构建
-
-适合有 Git 访问权限的服务器。
-
-```bash
-# 克隆代码
+# 1. 克隆代码到服务器
 git clone https://github.com/your/repo.git
 cd repo
 
-# 构建并启动
+# 2. 配置环境变量
+cp deployment/env.example deployment/.env
+vim deployment/.env
+
+# 3. 构建并启动
 docker-compose -f deployment/docker-compose.yml up -d --build
+
+# 4. 启用 Celery Worker（可选）
+docker-compose -f deployment/docker-compose.yml --profile worker up -d
+```
+
+### 方式二：导出镜像部署（推荐）
+
+适合服务器无法访问 Git 仓库，或需要统一镜像版本的场景。
+
+#### 步骤 1：本地构建并导出镜像
+
+```bash
+# 进入项目根目录
+cd /path/to/fastapi_boilerplate
+
+# 构建生产镜像
+docker build -t fastapi-app:latest -f deployment/docker/Dockerfile .
+
+# 导出镜像为压缩文件
+docker save fastapi-app:latest | gzip > fastapi-app.tar.gz
+
+# 查看镜像大小
+ls -lh fastapi-app.tar.gz
+```
+
+#### 步骤 2：准备部署文件
+
+需要传输到服务器的文件：
+```
+fastapi-app.tar.gz          # 镜像文件
+deployment/docker-compose.prod.yml  # 编排文件
+deployment/env.example      # 环境变量模板
+```
+
+#### 步骤 3：传输到服务器
+
+```bash
+# 创建服务器目录
+ssh user@server "mkdir -p /opt/fastapi-app"
+
+# 传输文件
+scp fastapi-app.tar.gz user@server:/opt/fastapi-app/
+scp deployment/docker-compose.prod.yml user@server:/opt/fastapi-app/docker-compose.yml
+scp deployment/env.example user@server:/opt/fastapi-app/.env
+```
+
+#### 步骤 4：服务器上部署
+
+```bash
+# 登录服务器
+ssh user@server
+cd /opt/fastapi-app
+
+# 加载镜像
+docker load < fastapi-app.tar.gz
+
+# 验证镜像已加载
+docker images | grep fastapi-app
+
+# 修改环境变量（重要！）
+vim .env
+# 必须修改：
+# - SECRET_KEY=<生成一个强密码>
+# - POSTGRES_PASSWORD=<数据库密码>
+
+# 启动服务
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f app
+```
+
+#### 步骤 5：验证部署
+
+```bash
+# 健康检查
+curl http://localhost:8000/health
+
+# 查看 API 文档
+# 浏览器访问 http://your-server-ip:8000/docs
+```
+
+#### 更新部署
+
+```bash
+# 本地重新构建镜像
+docker build -t fastapi-app:latest -f deployment/docker/Dockerfile .
+docker save fastapi-app:latest | gzip > fastapi-app.tar.gz
+
+# 传输到服务器
+scp fastapi-app.tar.gz user@server:/opt/fastapi-app/
+
+# 服务器上更新
+ssh user@server
+cd /opt/fastapi-app
+docker load < fastapi-app.tar.gz
+docker-compose up -d --force-recreate
+```
+
+### 方式三：单容器运行
+
+适合简单场景或已有外部数据库。
+
+```bash
+# 加载镜像
+docker load < fastapi-app.tar.gz
+
+# 运行容器
+docker run -d \
+  --name fastapi-app \
+  -p 8000:8000 \
+  -e DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname \
+  -e SECRET_KEY=your-secret-key \
+  -e REDIS_URL=redis://host:6379/0 \
+  -v /data/app/logs:/app/logs \
+  fastapi-app:latest
+
+# 查看日志
+docker logs -f fastapi-app
 ```
 
 ## 环境变量
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| `APP_ENV` | 运行环境 | production |
-| `DEBUG` | 调试模式 | false |
-| `DATABASE_URL` | 数据库连接 | - |
-| `REDIS_URL` | Redis 连接 | - |
-| `SECRET_KEY` | JWT 密钥 | - |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token 过期时间 | 30 |
+| 变量 | 说明 | 默认值 | 必填 |
+|------|------|--------|------|
+| `SECRET_KEY` | JWT 密钥 | - | ✅ |
+| `POSTGRES_USER` | 数据库用户 | postgres | |
+| `POSTGRES_PASSWORD` | 数据库密码 | postgres | ✅ 生产环境 |
+| `POSTGRES_DB` | 数据库名 | fastapi_db | |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token 过期时间（分钟） | 30 | |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | 刷新 Token 过期时间（天） | 7 | |
+
+生成安全的 SECRET_KEY：
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
 ## 服务说明
 
@@ -139,32 +233,35 @@ docker-compose -f deployment/docker-compose.yml up -d --build
 
 ```bash
 # 查看运行状态
-docker-compose -f deployment/docker-compose.yml ps
+docker-compose ps
 
 # 查看日志
-docker-compose -f deployment/docker-compose.yml logs -f [service]
+docker-compose logs -f [service]
 
 # 进入容器
-docker-compose -f deployment/docker-compose.yml exec app bash
+docker-compose exec app bash
 
 # 重启服务
-docker-compose -f deployment/docker-compose.yml restart app
+docker-compose restart app
 
-# 重新构建
-docker-compose -f deployment/docker-compose.yml up -d --build
+# 停止并删除容器
+docker-compose down
 
-# 清理资源
-docker-compose -f deployment/docker-compose.yml down -v --rmi local
+# 停止并删除容器、数据卷
+docker-compose down -v
+
+# 清理未使用的镜像
+docker image prune -f
 ```
 
 ## 数据库迁移
 
 ```bash
 # 进入容器执行迁移
-docker-compose -f deployment/docker-compose.yml exec app alembic upgrade head
+docker-compose exec app alembic upgrade head
 
 # 或设置环境变量自动迁移
-RUN_MIGRATIONS=true docker-compose -f deployment/docker-compose.yml up -d
+RUN_MIGRATIONS=true docker-compose up -d
 ```
 
 ## 健康检查
@@ -180,19 +277,32 @@ Docker 会自动检查服务健康状态，不健康时自动重启。
 
 ## 日志管理
 
-生产环境日志存储在 Docker Volume 中：
+```bash
+# 查看应用日志
+docker-compose logs -f app
+
+# 导出日志文件
+docker cp fastapi-app:/app/logs ./logs_backup
+
+# 查看 Docker Volume
+docker volume ls
+docker volume inspect <volume_name>
+```
+
+## 数据备份
 
 ```bash
-# 查看日志位置
-docker volume inspect fastapi_app_logs
+# 备份 PostgreSQL 数据库
+docker-compose exec db pg_dump -U postgres fastapi_db > backup.sql
 
-# 导出日志
-docker cp fastapi-app:/app/logs ./logs_backup
+# 恢复数据库
+cat backup.sql | docker-compose exec -T db psql -U postgres fastapi_db
 ```
 
 ## 注意事项
 
-1. **生产环境必须修改 SECRET_KEY**
-2. **PostgreSQL 密码应使用强密码**
-3. **建议使用 HTTPS 反向代理（如 Nginx）**
-4. **定期备份数据库数据**
+1. **生产环境必须修改 SECRET_KEY** - 使用强随机密钥
+2. **PostgreSQL 密码应使用强密码** - 不要使用默认值
+3. **建议使用 HTTPS 反向代理** - 如 Nginx + Let's Encrypt
+4. **定期备份数据库数据** - 设置定时任务
+5. **监控服务状态** - 配置告警通知
