@@ -81,6 +81,13 @@ docker-compose -f deployment/docker-compose.yml --profile worker up -d
 
 适合服务器无法访问 Git 仓库，或需要统一镜像版本的场景。
 
+> **注意**：此方式只部署应用容器，需要自行准备外部数据库（PostgreSQL/MySQL）和缓存（Redis）服务。
+
+#### 前置要求
+
+- 外部 PostgreSQL 或 MySQL 数据库
+- 外部 Redis 服务（可选，用于缓存和 Celery）
+
 #### 步骤 1：本地构建并导出镜像
 
 ```bash
@@ -133,9 +140,10 @@ docker images | grep fastapi-app
 
 # 修改环境变量（重要！）
 vim .env
-# 必须修改：
+# 必须配置：
+# - DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
 # - SECRET_KEY=<生成一个强密码>
-# - POSTGRES_PASSWORD=<数据库密码>
+# - REDIS_URL=redis://host:6379/0  (可选)
 
 # 启动服务
 docker-compose up -d
@@ -200,21 +208,43 @@ docker logs -f fastapi-app
 
 | 变量 | 说明 | 默认值 | 必填 |
 |------|------|--------|------|
+| `DATABASE_URL` | 数据库连接字符串 | - | ✅ |
 | `SECRET_KEY` | JWT 密钥 | - | ✅ |
-| `POSTGRES_USER` | 数据库用户 | postgres | |
-| `POSTGRES_PASSWORD` | 数据库密码 | postgres | ✅ 生产环境 |
-| `POSTGRES_DB` | 数据库名 | fastapi_db | |
+| `REDIS_URL` | Redis 连接字符串 | - | 可选 |
+| `APP_PORT` | 应用端口 | 8000 | |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token 过期时间（分钟） | 30 | |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | 刷新 Token 过期时间（天） | 7 | |
 
-生成安全的 SECRET_KEY：
+### 数据库连接字符串格式
+
+```bash
+# PostgreSQL
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/dbname
+
+# MySQL
+DATABASE_URL=mysql+aiomysql://user:password@host:3306/dbname
+
+# SQLite（仅开发环境）
+DATABASE_URL=sqlite+aiosqlite:///./data/app.db
+```
+
+### 生成安全的 SECRET_KEY
+
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 ## 服务说明
 
-### 生产环境服务
+### 生产环境服务（docker-compose.prod.yml）
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| app | 8000 | FastAPI 应用（Gunicorn + Uvicorn） |
+
+> 数据库和 Redis 需要外部提供
+
+### 开发环境服务（docker-compose.yml）
 
 | 服务 | 端口 | 说明 |
 |------|------|------|

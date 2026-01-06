@@ -1,34 +1,30 @@
 # 生产环境 Docker Compose 配置（使用预构建镜像）
 # 适用于导出镜像部署的场景
 # 使用方式: docker-compose -f docker-compose.prod.yml up -d
+#
+# 注意：此配置只包含应用服务，数据库和缓存需要外部提供
+# 通过环境变量配置连接外部服务
 
 version: "3.8"
 
 services:
-  # FastAPI 应用（使用预构建镜像）
+  # FastAPI 应用
   app:
     image: fastapi-app:latest
     container_name: fastapi-app
     restart: always
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
       - APP_ENV=production
-      - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-fastapi_db}
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - REDIS_URL=${REDIS_URL:-}
       - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes:
       - app_data:/app/data
       - app_logs:/app/logs
-    networks:
-      - fastapi-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -36,68 +32,6 @@ services:
       retries: 3
       start_period: 10s
 
-  # PostgreSQL 数据库
-  db:
-    image: postgres:15-alpine
-    container_name: fastapi-db
-    restart: always
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-fastapi_db}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - fastapi-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis 缓存
-  redis:
-    image: redis:7-alpine
-    container_name: fastapi-redis
-    restart: always
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    networks:
-      - fastapi-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Celery Worker（可选）
-  worker:
-    image: fastapi-app:latest
-    container_name: fastapi-worker
-    restart: always
-    command: celery -A app.tasks worker --loglevel=info
-    environment:
-      - APP_ENV=production
-      - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-fastapi_db}
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - fastapi-network
-    profiles:
-      - worker
-
-networks:
-  fastapi-network:
-    driver: bridge
-
 volumes:
-  postgres_data:
-  redis_data:
   app_data:
   app_logs:
