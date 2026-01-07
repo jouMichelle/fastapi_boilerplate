@@ -1,32 +1,34 @@
 # Repository Guidelines
 
 ## 项目结构与模块组织
-- `app/` 为主应用代码，常见子模块包括 `api/`、`core/`、`models/`、`schemas/`、`services/`、`dal/`、`tasks/`、`utils/`。
-- `tests/` 用于测试，结构包含 `unit/`、`integration/`、`api/`。
-- `configs/` 存放应用与日志等配置（如 `app.yaml`、`logging.yaml`、`models.yaml`、`secrets.example.yaml`）。
-- `migrations/` 为 Alembic 迁移脚本，`deployment/` 保存容器与环境示例，`static/` 放静态资源。
-- 约定：正式文档放 `docs/`，讨论方案放 `discuss/`，脚本放 `scripts/`（Shell 脚本使用 `scripts/*.sh`），日志放 `logs/`，示例放 `examples/`。
+- `app/` 为主应用代码，含 `api/`、`core/`、`services/`、`dal/`、`models/`、`schemas/`、`tasks/`、`utils/`。
+- `tests/` 存放测试，建议按 `unit/`、`integration/`、`api/` 划分；`migrations/` 为 Alembic 迁移脚本。
+- `configs/` 放应用与日志配置，`deployment/` 放 Docker 与环境示例，`static/` 放静态资源。
+- 约定目录：正式文档 `docs/`，讨论方案 `discuss/`，脚本 `scripts/*.sh`，日志 `logs/`，示例 `examples/`。
 
 ## 构建、测试与本地开发
-- 当前仓库未提供统一入口脚本，请先确认 `app/main.py` 与 `deployment/docker-compose*.yml` 的实际内容。
-- 常见本地启动示例（以实际代码为准）：
-  - `python -m uvicorn app.main:app --reload`
-  - `docker compose -f deployment/docker-compose.yml up -d`
-- 数据库初始化脚本位于 `scripts/init_db.py`，执行前需核对配置与参数。
+- 安装依赖：`uv sync` 或 `pip install -e .`。
+- 本地运行：`python run.py` 或 `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`。
+- Docker 启动：`docker-compose -f deployment/docker-compose.dev.yml up -d`，生产使用 `deployment/docker-compose.yml`。
+- 数据库迁移：`alembic revision --autogenerate -m "描述"`，`alembic upgrade head`。
 
 ## 编码风格与命名约定
-- Python 采用 4 空格缩进；变量/函数使用 `snake_case`，类使用 `PascalCase`。
-- 业务逻辑放在 `services/`，数据访问放在 `dal/`，避免模块职责混杂。
-- 文档命名使用 `YYYY-MM-DD-HH-MM-SS-描述.md`，按目录约定归档。
+- Python 4 空格缩进；变量/函数用 `snake_case`，类用 `PascalCase`。
+- 业务逻辑放 `app/services/`，数据访问放 `app/dal/`，避免跨层耦合。
+- 质量工具：`ruff check .`（lint），`mypy app/`（类型检查），行宽 120。
 
 ## 测试指南
-- 测试统一放在 `tests/`，按 `unit/`、`integration/`、`api/` 细分。
-- 目前未发现测试框架配置，建议使用 `pytest` 并采用 `test_*.py` 命名。
-- 关键修复或新增功能应补充最小可复现测试。
+- 测试框架：`pytest` + `pytest-asyncio`，入口为 `tests/`。
+- 文件命名 `test_*.py`，建议按模块目录组织测试。
+- 运行：`pytest tests/` 或 `pytest tests/api`。
 
-## 提交与 PR 规范
-- Git 历史显示采用 Conventional Commits：`type(scope): subject`（如 `chore(config): ...`）。
-- PR 建议包含：变更说明、关联问题/需求、配置或迁移说明、测试结果或截图（如影响接口/页面）。
+## 提交与 PR 指南
+- 提交信息遵循 Conventional Commits：`type(scope): subject`。
+- PR 需包含变更说明、关联问题、配置/迁移说明、测试结果；影响接口时附示例或截图。
 
 ## 安全与配置
-- 不提交真实密钥或敏感信息，优先基于 `configs/secrets.example.yaml` 与 `deployment/env.example` 创建本地配置。
+- 参考 `configs/secrets.example.yaml` 与 `deployment/env.example` 配置本地环境，不提交真实密钥。
+- 运行日志统一输出到 `logs/`。
+
+## 协作与自动化
+- 完成代码创建/修改/重构后，追加记录到 `codex_operateLog.md`，包含日期、简述与关键 diff 片段。

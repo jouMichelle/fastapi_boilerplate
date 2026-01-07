@@ -51,3 +51,18 @@ class Settings(BaseSettings):
 +APP_ENV=production
 +PORT=80
 ```
+
+## 2026-01-07 15:33:50
+- 描述：新增仓库贡献指南 `AGENTS.md`，补充结构、命令与协作规范。
+- 关键变更：
+```diff
++# Repository Guidelines
++## 项目结构与模块组织
++- `app/` 为主应用代码，含 `api/`、`core/`、`services/`、`dal/`、`models/`、`schemas/`、`tasks/`、`utils/`。
++- 约定目录：正式文档 `docs/`，讨论方案 `discuss/`，脚本 `scripts/*.sh`，日志 `logs/`，示例 `examples/`。
++## 构建、测试与本地开发
++- 安装依赖：`uv sync` 或 `pip install -e .`。
++- 本地运行：`python run.py` 或 `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`。
++## 协作与自动化
++- 完成代码创建/修改/重构后，追加记录到 `codex_operateLog.md`，包含日期、简述与关键 diff 片段。
+```
