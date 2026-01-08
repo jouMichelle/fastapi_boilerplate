@@ -1,10 +1,10 @@
 # ===========================================
-# 应用配置
+# 应用配置（简化版）
 # ===========================================
 app:
-  name: FastAPI Boilerplate
+  name: FastAPI Simple
   version: 0.1.0
-  description: A production-ready FastAPI boilerplate
+  description: A simple FastAPI boilerplate for small projects
 
 # ===========================================
 # 服务器配置
@@ -21,6 +21,7 @@ cors:
   origins:
     - "http://localhost:3000"
     - "http://localhost:8080"
+    - "*"  # 开发环境允许所有来源
   methods:
     - "*"
   headers:
@@ -33,22 +34,3 @@ cors:
 pagination:
   default_page_size: 20
   max_page_size: 100
-
-# ===========================================
-# 速率限制配置
-# ===========================================
-rate_limit:
-  enabled: true
-  requests_per_minute: 60
-
-# ===========================================
-# 文件上传配置
-# ===========================================
-upload:
-  max_size_mb: 10
-  allowed_extensions:
-    - ".jpg"
-    - ".jpeg"
-    - ".png"
-    - ".gif"
-    - ".pdf"

@@ -1,97 +1,116 @@
-"""安全相关功能：JWT、密码哈希等"""
+"""接口鉴权模块
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+提供简单的 API Key 验证机制，适用于小型项目的接口保护。
+"""
 
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from fastapi import Header, HTTPException, Depends, status
 
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedError
-
-# 密码哈希上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """验证密码"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def hash_password(password: str) -> str:
-    """生成密码哈希"""
-    return pwd_context.hash(password)
-
-
-def create_access_token(
-    data: dict[str, Any],
-    expires_delta: timedelta | None = None,
+async def verify_api_key(
+    x_api_key: str = Header(..., description="API 密钥"),
 ) -> str:
-    """创建访问令牌"""
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    to_encode.update({"exp": expire, "type": "access"})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    """
+    验证 API Key
 
+    使用方式:
+        @router.get("/protected", dependencies=[Depends(verify_api_key)])
+        async def protected_endpoint():
+            return {"message": "OK"}
 
-def create_refresh_token(
-    data: dict[str, Any],
-    expires_delta: timedelta | None = None,
-) -> str:
-    """创建刷新令牌"""
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    )
-    to_encode.update({"exp": expire, "type": "refresh"})
-    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
-
-def decode_token(token: str) -> dict[str, Any]:
-    """解码令牌"""
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
+    或者获取 API Key:
+        @router.get("/protected")
+        async def protected_endpoint(api_key: str = Depends(verify_api_key)):
+            return {"api_key": api_key}
+    """
+    if x_api_key != settings.API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key",
+            headers={"WWW-Authenticate": "ApiKey"},
         )
-        return payload
-    except JWTError as e:
-        raise UnauthorizedError(detail=f"Invalid token: {e}") from e
+    return x_api_key
 
 
-def verify_access_token(token: str) -> dict[str, Any]:
-    """验证访问令牌"""
-    payload = decode_token(token)
-    if payload.get("type") != "access":
-        raise UnauthorizedError(detail="Invalid access token")
-    return payload
+async def verify_api_key_optional(
+    x_api_key: str | None = Header(None, description="API 密钥（可选）"),
+) -> str | None:
+    """
+    可选的 API Key 验证
+
+    如果提供了 API Key 则验证，否则返回 None
+    """
+    if x_api_key is None:
+        return None
+
+    if x_api_key != settings.API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API Key",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    return x_api_key
 
 
-def verify_refresh_token(token: str) -> dict[str, Any]:
-    """验证刷新令牌"""
-    payload = decode_token(token)
-    if payload.get("type") != "refresh":
-        raise UnauthorizedError(detail="Invalid refresh token")
-    return payload
+class APIKeyAuth:
+    """API Key 认证依赖类
+
+    支持自定义 API Key 来源（Header、Query、Cookie）
+
+    使用方式:
+        auth = APIKeyAuth(header_name="Authorization", prefix="Bearer ")
+
+        @router.get("/protected", dependencies=[Depends(auth)])
+        async def protected_endpoint():
+            return {"message": "OK"}
+    """
+
+    def __init__(
+        self,
+        header_name: str = "X-API-Key",
+        query_name: str | None = None,
+        prefix: str = "",
+        auto_error: bool = True,
+    ):
+        self.header_name = header_name
+        self.query_name = query_name
+        self.prefix = prefix
+        self.auto_error = auto_error
+
+    async def __call__(
+        self,
+        api_key_header: str | None = Header(None, alias="X-API-Key"),
+    ) -> str | None:
+        api_key = api_key_header
+
+        if api_key and self.prefix:
+            if api_key.startswith(self.prefix):
+                api_key = api_key[len(self.prefix) :]
+            elif self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"API Key must start with '{self.prefix}'",
+                )
+
+        if not api_key:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="API Key is required",
+                )
+            return None
+
+        if api_key != settings.API_KEY:
+            if self.auto_error:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid API Key",
+                )
+            return None
+
+        return api_key
 
 
-class TokenPayload:
-    """令牌载荷"""
-
-    def __init__(self, payload: dict[str, Any]) -> None:
-        self.sub: str | None = payload.get("sub")
-        self.exp: datetime | None = None
-        self.token_type: str | None = payload.get("type")
-
-        if exp := payload.get("exp"):
-            self.exp = datetime.fromtimestamp(exp, tz=timezone.utc)
-
-    @property
-    def is_expired(self) -> bool:
-        """是否已过期"""
-        if self.exp is None:
-            return True
-        return datetime.now(timezone.utc) > self.exp
+# 默认的 API Key 认证实例
+api_key_auth = APIKeyAuth()

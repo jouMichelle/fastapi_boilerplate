@@ -44,9 +44,12 @@ class Settings(BaseSettings):
 
     # 安全配置
     SECRET_KEY: str = "your-super-secret-key-change-in-production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    API_KEY: str = "your-api-key-change-in-production"
+
+    # MinIO 配置
+    MINIO_ENDPOINT: str = ""
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
 
     # CORS 配置
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8080"]

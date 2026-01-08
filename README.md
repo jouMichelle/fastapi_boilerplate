@@ -1,26 +1,46 @@
-# FastAPI Boilerplate
+# FastAPI Simple Boilerplate
 
-一个生产级 FastAPI 项目脚手架，采用分层架构设计，开箱即用。
+简单的 FastAPI 项目脚手架，适合小型项目快速开发。
 
 ## 特性
 
-- **分层架构** - Router → Service → DAL → Model 清晰分层
-- **认证授权** - JWT Bearer Token 认证，支持登录/注册/刷新令牌
-- **多数据库支持** - SQLite / PostgreSQL / MySQL 无缝切换
-- **日志系统** - Loguru + Request ID 请求追踪
-- **统一响应** - 标准化 API 响应格式和错误码
-- **通用工具** - 日期时间、ID 生成器等常用工具
-- **中间件** - 访问日志、请求追踪、安全响应头
-- **Docker 部署** - 完整的 Docker Compose 配置
+- **简洁架构** - 扁平化目录结构，易于理解和扩展
+- **API Key 鉴权** - 简单的接口保护机制
+- **多数据库支持** - SQLite / PostgreSQL / MySQL
+- **异步支持** - 全栈异步（FastAPI + SQLAlchemy 2.0）
+- **外部服务客户端** - Redis + MinIO 开箱即用
+- **日志系统** - Loguru 结构化日志
+- **CORS 配置** - 开发/生产环境灵活配置
+- **Docker 支持** - 简单的容器化部署
+
+## 项目结构
+
+```
+├── app/
+│   ├── api/                  # API 路由
+│   ├── core/                 # 核心模块
+│   │   ├── config.py         # 配置管理
+│   │   ├── exceptions.py     # 异常定义
+│   │   ├── logger.py         # 日志系统
+│   │   ├── response.py       # 统一响应格式
+│   │   └── security.py       # API Key 鉴权
+│   ├── database/             # 数据库配置
+│   ├── models/               # ORM 模型
+│   ├── schemas/              # Pydantic 模型
+│   ├── services/             # 业务逻辑
+│   └── utils/                # 工具函数
+├── client/                   # 外部服务客户端
+│   ├── redis.py              # Redis 客户端
+│   └── minio.py              # MinIO 客户端
+├── configs/                  # 配置文件
+├── main.py                   # 应用入口
+├── Dockerfile
+└── docker-compose.yml
+```
 
 ## 快速开始
 
-### 环境要求
-
-- Python 3.11+
-- uv (推荐) 或 pip
-
-### 安装依赖
+### 1. 安装依赖
 
 ```bash
 # 使用 uv（推荐）
@@ -30,120 +50,92 @@ uv sync
 pip install -e .
 ```
 
-### 运行应用
+### 2. 配置环境
+
+```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑配置
+vim .env
+```
+
+### 3. 运行应用
 
 ```bash
 # 开发模式
-python run.py
+python main.py
 
 # 或使用 uvicorn
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-访问 http://localhost:8000/docs 查看 API 文档。
+### 4. 访问 API
 
-## 项目结构
-
-```
-app/
-├── api/v1/              # API 路由
-│   ├── auth/            # 认证接口（登录/注册/刷新令牌）
-│   └── user/            # 用户 CRUD 接口
-├── bootstrap/           # 应用启动引导
-│   ├── app_factory.py   # 应用工厂
-│   ├── lifespan.py      # 生命周期管理
-│   └── router.py        # 路由注册
-├── core/                # 核心功能
-│   ├── config.py        # 配置管理
-│   ├── exceptions.py    # 异常定义
-│   ├── logger.py        # 日志配置
-│   ├── response.py      # 响应格式
-│   └── security.py      # 安全工具（JWT/密码）
-├── dal/                 # 数据访问层
-│   ├── base.py          # Repository 基类
-│   ├── session.py       # 数据库会话
-│   └── user/            # 用户 Repository
-├── deps/                # 依赖注入
-│   ├── auth.py          # 认证依赖
-│   ├── db.py            # 数据库依赖
-│   └── context.py       # 请求上下文
-├── http_middleware/     # HTTP 中间件
-├── models/              # ORM 模型
-├── schemas/             # Pydantic Schema
-├── services/            # 业务逻辑层
-│   ├── auth/            # 认证服务
-│   └── user/            # 用户服务
-├── tasks/               # Celery 异步任务
-└── utils/               # 工具函数
-    └── common/          # 通用工具
-```
-
-## API 接口
-
-### 认证接口
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/v1/auth/register` | 用户注册 |
-| POST | `/api/v1/auth/login` | 用户登录 |
-| POST | `/api/v1/auth/refresh` | 刷新令牌 |
-
-### 用户接口
-
-| 方法 | 路径 | 说明 | 认证 |
-|------|------|------|------|
-| POST | `/api/v1/users` | 创建用户 | 否 |
-| GET | `/api/v1/users` | 用户列表 | 是 |
-| GET | `/api/v1/users/me` | 当前用户 | 是 |
-| GET | `/api/v1/users/{id}` | 用户详情 | 是 |
-| PUT | `/api/v1/users/{id}` | 更新用户 | 是 |
-| DELETE | `/api/v1/users/{id}` | 删除用户 | 是 |
+- API 文档: http://localhost:8000/docs
+- 健康检查: http://localhost:8000/health
+- 示例接口: http://localhost:8000/api/example
 
 ## 配置说明
 
 ### 环境变量
 
-```bash
-# 应用配置
-APP_NAME=FastAPI Boilerplate
-DEBUG=true
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `APP_ENV` | 环境 | `development` |
+| `DEBUG` | 调试模式 | `false` |
+| `DATABASE_URL` | 数据库连接 | `sqlite+aiosqlite:///./data/app.db` |
+| `REDIS_URL` | Redis 连接 | `redis://localhost:6379/0` |
+| `API_KEY` | API 密钥 | `your-api-key-change-in-production` |
+| `SECRET_KEY` | 应用密钥 | `your-super-secret-key-change-in-production` |
 
-# 数据库配置
-DATABASE_URL=sqlite+aiosqlite:///./data/app.db
+### MinIO 配置
 
-# JWT 配置
-SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
+| 变量 | 说明 |
+|------|------|
+| `MINIO_ENDPOINT` | MinIO 服务地址 |
+| `MINIO_ACCESS_KEY` | 访问密钥 |
+| `MINIO_SECRET_KEY` | 秘密密钥 |
+
+## API Key 鉴权
+
+在需要保护的接口上使用 `verify_api_key` 依赖：
+
+```python
+from fastapi import Depends
+from app.core.security import verify_api_key
+
+@router.get("/protected", dependencies=[Depends(verify_api_key)])
+async def protected_endpoint():
+    return {"message": "OK"}
 ```
 
-### 多数据库支持
+请求时在 Header 中添加：
 
-```bash
-# SQLite（开发环境）
-DATABASE_URL=sqlite+aiosqlite:///./data/app.db
-
-# PostgreSQL（生产环境）
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/dbname
-
-# MySQL
-DATABASE_URL=mysql+aiomysql://user:password@localhost:3306/dbname
+```
+X-API-Key: your-api-key
 ```
 
-## 开发命令
+## 数据库操作
+
+```python
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db_session
+
+@router.get("/items")
+async def get_items(db: AsyncSession = Depends(get_db_session)):
+    result = await db.execute(select(Item))
+    return result.scalars().all()
+```
+
+## 数据库迁移
 
 ```bash
-# 运行测试
-pytest tests/
-
-# 代码检查
-ruff check .
-
-# 类型检查
-mypy app/
-
-# 数据库迁移
+# 生成迁移
 alembic revision --autogenerate -m "描述"
+
+# 执行迁移
 alembic upgrade head
 ```
 
@@ -157,19 +149,23 @@ docker-compose -f deployment/docker-compose.dev.yml up -d
 docker-compose -f deployment/docker-compose.yml up -d
 ```
 
-## 技术栈
+## 与完整版的区别
 
-| 组件 | 技术 |
-|------|------|
-| Web 框架 | FastAPI |
-| ORM | SQLAlchemy 2.0 (async) |
-| 数据验证 | Pydantic v2 |
-| 认证 | python-jose (JWT) |
-| 密码哈希 | passlib + bcrypt |
-| 日志 | Loguru |
-| 任务队列 | Celery + Redis |
-| 数据库迁移 | Alembic |
+此简化版移除了：
 
-## 许可证
+| 功能 | 简化版 | 完整版 |
+|------|--------|--------|
+| 用户登录/注册 | ❌ | ✅ |
+| JWT 认证 | ❌ | ✅ |
+| 用户管理 | ❌ | ✅ |
+| DAL 数据访问层 | ❌ | ✅ |
+| 依赖注入层 | ❌ | ✅ |
+| 中间件（请求ID/访问日志） | ❌ | ✅ |
+| Celery 异步任务 | ❌ | ✅ |
+| API 版本化 | ❌ | ✅ |
+
+如需完整功能，请切换到 `main` 分支。
+
+## License
 
 Apache License 2.0
