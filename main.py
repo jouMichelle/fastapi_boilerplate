@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logger import init_logger, logger
+from app.core.middleware import AccessLogMiddleware
 from app.database import init_db, close_db
 from client.redis import get_redis_client, close_redis_client
 
@@ -43,6 +44,9 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
     )
+
+    # 注册访问日志中间件
+    app.add_middleware(AccessLogMiddleware)
 
     # 配置 CORS
     app.add_middleware(

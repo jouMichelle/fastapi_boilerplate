@@ -34,10 +34,74 @@ class Settings(BaseSettings):
     PORT: int = 8000
     RELOAD: bool = False
 
-    # 数据库配置
-    # 支持 PostgreSQL: postgresql+asyncpg://user:pass@host:port/db
-    # 支持 SQLite: sqlite+aiosqlite:///./data/app.db
-    DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"
+    # ============================================================
+    # 数据库配置（支持分离式配置和直接 URL 配置）
+    # ============================================================
+
+    # --- SQLite 配置（分离式） ---
+    SQLITE_PATH: str = "./data/app.db"
+
+    # --- PostgreSQL 配置（分离式） ---
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DB: str = "fastapi_db"
+
+    # --- MySQL 配置（分离式） ---
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = ""
+    MYSQL_DB: str = "fastapi_db"
+
+    # --- 直接 URL 配置（可选，优先级高于分离式配置） ---
+    # 如果配置了这些字段，将覆盖分离式配置
+    _SQLITE_URL: str | None = None
+    _POSTGRES_URL: str | None = None
+    _MYSQL_URL: str | None = None
+
+    # --- 默认数据库选择 ---
+    DEFAULT_DATABASE: str = "sqlite"  # sqlite | postgres | mysql
+
+    @property
+    def SQLITE_URL(self) -> str:
+        """
+        获取 SQLite 连接 URL
+
+        优先级：直接配置 > 分离式组装
+        """
+        if self._SQLITE_URL:
+            return self._SQLITE_URL
+        return f"sqlite+aiosqlite:///{self.SQLITE_PATH}"
+
+    @property
+    def POSTGRES_URL(self) -> str:
+        """
+        获取 PostgreSQL 连接 URL
+
+        优先级：直接配置 > 分离式组装
+        """
+        if self._POSTGRES_URL:
+            return self._POSTGRES_URL
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    @property
+    def MYSQL_URL(self) -> str:
+        """
+        获取 MySQL 连接 URL
+
+        优先级：直接配置 > 分离式组装
+        """
+        if self._MYSQL_URL:
+            return self._MYSQL_URL
+        return (
+            f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+            f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
+        )
 
     # Redis 配置
     REDIS_URL: str = "redis://localhost:6379/0"

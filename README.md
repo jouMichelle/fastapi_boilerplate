@@ -165,7 +165,3 @@ docker-compose -f deployment/docker-compose.yml up -d
 | API 版本化 | ❌ | ✅ |
 
 如需完整功能，请切换到 `main` 分支。
-
-## License
-
-Apache License 2.0
