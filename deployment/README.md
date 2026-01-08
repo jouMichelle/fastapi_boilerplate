@@ -39,7 +39,7 @@ docker-compose -f deployment/docker-compose.dev.yml down
 
 ```bash
 # 1. 复制并配置环境变量
-cp deployment/env.example deployment/.env
+cp deployment/..env.example deployment/.env
 vim deployment/.env  # 修改 SECRET_KEY 等配置
 
 # 2. 构建并启动（包含 PostgreSQL + Redis）
@@ -67,7 +67,7 @@ git clone https://github.com/your/repo.git
 cd repo
 
 # 2. 配置环境变量
-cp deployment/env.example deployment/.env
+cp deployment/..env.example deployment/.env
 vim deployment/.env
 
 # 3. 构建并启动
@@ -122,7 +122,7 @@ ssh user@server "mkdir -p /opt/fastapi-app"
 # 传输文件
 scp fastapi-app.tar.gz user@server:/opt/fastapi-app/
 scp deployment/docker-compose.prod.yml user@server:/opt/fastapi-app/docker-compose.yml
-scp deployment/env.example user@server:/opt/fastapi-app/.env
+scp deployment/..env.example user@server:/opt/fastapi-app/.env
 ```
 
 #### 步骤 4：服务器上部署
