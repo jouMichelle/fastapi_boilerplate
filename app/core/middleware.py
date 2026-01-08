@@ -20,13 +20,14 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from app.core.logger import get_logger
-
 # 请求上下文变量（用于在异步环境中传递 request_id）
 request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
 
-# 访问日志 logger
-access_logger = get_logger("access")
+
+def _get_access_logger():
+    """延迟获取访问日志 logger，避免模块导入时的初始化问题"""
+    from app.core.logger import get_logger
+    return get_logger("access")
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
@@ -48,6 +49,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: Callable
     ) -> Response:
         """处理每个 HTTP 请求"""
+
+        # 获取访问日志 logger
+        access_logger = _get_access_logger()
 
         # 1. 生成 request_id
         request_id = self._generate_request_id()

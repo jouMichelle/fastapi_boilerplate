@@ -50,6 +50,11 @@ app/
 ## 开发命令
 
 ```bash
+# 切换 conda 环境（必需）
+source /opt/anaconda3/bin/activate agent_v1_3.11
+# 或
+conda activate agent_v1_3.11
+
 # 运行应用（开发模式）
 python main.py
 
@@ -202,15 +207,16 @@ url = minio_client.get_presigned_url(bucket, object_name, expires=3600)
 ## 与完整版 (main 分支) 的区别
 
 | 功能 | 简化版 (simple) | 完整版 (main) |
-|------|----------------|---------------|
+|------|-----------------|---------------|
 | 用户登录/注册 | ❌ | ✅ |
 | JWT 认证 | ❌ | ✅ |
 | 用户管理 | ❌ | ✅ |
 | DAL 数据访问层 | ❌ | ✅ |
 | 依赖注入层 | ❌ | ✅ |
-| 中间件（请求ID/访问日志） | ❌ | ✅ |
+| 中间件（访问日志） | ✅ | ✅ |
 | Celery 异步任务 | ❌ | ✅ |
 | API 版本化 | ❌ | ✅ |
+| 多数据库支持 | ✅ | ❌ |
 | API Key 鉴权 | ✅ | ✅ |
 | 数据库支持 | ✅ | ✅ |
 | Redis/MinIO | ✅ | ✅ |

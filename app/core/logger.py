@@ -244,6 +244,34 @@ class LoggingManager:
 # 四、Logger 获取函数（统一入口）
 # ============================================================
 
+def init_logger(
+    *,
+    config: Mapping[str, Any] | None = None,
+    log_dir: str = "logs",
+) -> None:
+    """
+    初始化日志系统（便捷函数）
+
+    Args:
+        config: 日志配置，默认使用 DEFAULT_LOGGING_CONFIG
+        log_dir: 日志文件目录
+
+    使用示例：
+        from app.core.logger import init_logger
+
+        # 使用默认配置
+        init_logger()
+
+        # 从 YAML 文件加载配置
+        config = load_logging_config_from_yaml("configs/logging.yaml")
+        init_logger(config=config)
+    """
+    if config is None:
+        config = DEFAULT_LOGGING_CONFIG
+
+    LoggingManager.initialize(config=config, log_dir=log_dir)
+
+
 def get_logger(component: str):
     """
     获取绑定 component 的 logger
